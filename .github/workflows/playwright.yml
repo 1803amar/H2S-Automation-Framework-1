@@ -6,27 +6,44 @@ on:
   pull_request:
     branches: [ main, master ]
 
+permissions:
+  contents: write
+
 jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout code
       - uses: actions/checkout@v4
 
+      # Setup Node
       - uses: actions/setup-node@v4
         with:
           node-version: lts/*
 
+      # Install dependencies
       - name: Install dependencies
         run: npm ci
 
+      # Install Playwright browsers
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
 
+      # Run tests
       - name: Run Playwright tests
         run: npx playwright test
 
+      # Debug: check report folder
+      - name: List report files
+        if: always()
+        run: |
+          echo "Checking playwright-report folder..."
+          ls -la
+          ls -la playwright-report || echo "playwright-report not found"
+
+      # Upload artifact (optional but useful)
       - name: Upload Playwright Report
         if: always()
         uses: actions/upload-artifact@v4
@@ -35,9 +52,11 @@ jobs:
           path: playwright-report/
           retention-days: 30
 
+      # Deploy to GitHub Pages
       - name: Deploy to GitHub Pages
         if: always()
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: playwright-report
+          publish_dir: ./playwright-report
+          force_orphan: true
