@@ -1,0 +1,19 @@
+{
+  "name": "h2s-automation-framework",
+  "version": "1.0.0",
+  "description": "Pro-level Playwright automation framework for Hack2Skill platform",
+  "scripts": {
+    "test": "npx playwright test",
+    "test:s1": "npx playwright test tests/scenario1_validLogin.spec.js",
+    "test:s2": "npx playwright test tests/scenario2_timerExpiredRejection.spec.js",
+    "test:s3": "npx playwright test tests/scenario3_ongoingTabVisibility.spec.js",
+    "test:s4": "npx playwright test tests/scenario4_pendingTeamSubmission.spec.js",
+    "test:s5": "npx playwright test tests/scenario5_optionalProblemStatement.spec.js",
+    "test:s6": "npx playwright test tests/scenario6_teamDashboardSubmission.spec.js",
+    "report": "npx playwright show-report",
+    "install:browsers": "npx playwright install chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.44.0"
+  }
+}
