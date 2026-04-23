@@ -64,7 +64,18 @@ test('Scenario 3 — Submission visible in Ongoing tab after page refresh', asyn
   // we can see the Ongoing/Upcoming/Past sub-tabs.
   await dash.clickMainTab(TABS.SUBMISSIONS, tabList);
   log.info(`"${TABS.SUBMISSIONS}" main tab is now selected ✔`);
-  log.info('Sub-tabs (Ongoing / Upcoming / Past) should now be visible');
+  log.info('Waiting for Submissions panel content to fully render (CI runner may be slow)...');
+
+  // CI FIX: After clicking the Submissions main tab, React renders the sub-tabs
+  // and their content panels asynchronously. On GitHub Actions the JS execution
+  // is 2-4x slower than local. We wait for the sub-tablist to be visible
+  // (confirms the Submissions panel has rendered) before searching for cards.
+  await expect(
+    page.getByRole('tab', { name: TABS.ONGOING, exact: true }).first(),
+    `"${TABS.ONGOING}" sub-tab must be visible — confirms Submissions panel has rendered`
+  ).toBeVisible({ timeout: TIMEOUTS.MEDIUM });
+  log.pass(`"${TABS.ONGOING}" sub-tab is visible — Submissions panel rendered ✔`);
+  log.info('Sub-tabs (Ongoing / Upcoming / Past) are now visible and interactive');
 
   // ── STEP 5: Pre-Check — Find Card Across All Sub-Tabs ────
   log.step(5, `Pre-check: Searching all sub-tabs for card: "${SELECTORS.SUBMISSION_CARD}"`);

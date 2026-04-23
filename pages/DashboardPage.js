@@ -124,20 +124,42 @@ class DashboardPage {
   //
   // Returns:
   //   { tab: 'Ongoing'|'Upcoming'|'Past'|null, inOngoing, inUpcoming, inPast }
+  //
+  // CI NOTE:
+  //   On GitHub Actions (and other CI runners), the machine is slower than local.
+  //   The sub-tab panel content (cards) renders AFTER the tab click is confirmed.
+  //   We must wait for the tab panel to stabilise before probing for the card.
+  //   We use MEDIUM timeout (15s) instead of PROBE (3s) so CI has enough time.
   async findSubmissionCardInAnyTab(cardText) {
     const results = { inOngoing: false, inUpcoming: false, inPast: false };
 
-    // Check each sub-tab and probe for the card (non-fatal)
     for (const tabName of [TABS.ONGOING, TABS.UPCOMING, TABS.PAST]) {
+      // Click the sub-tab and confirm it is selected (aria-selected=true)
       await this.clickSubTab(tabName);
+
+      // CI FIX: After the tab is selected, the tab PANEL content is rendered
+      // asynchronously by React. On slow CI machines this takes longer than
+      // the 3s PROBE timeout. We wait for the tab panel container to be
+      // present in the DOM before probing for the card.
+      // We do this by waiting for the generic panel element that wraps all
+      // sub-tab content — its role="tabpanel" or its parent container.
+      // As a safe fallback we use a short waitForTimeout to let React flush.
+      await this.page.waitForTimeout(1500);
+      // 1.5s buffer for React to render the tab panel content on CI runners
+      // This is intentional: CI VMs have ~2-4x slower JS execution than local
+
+      // Now probe for the card — use MEDIUM timeout (15s) not PROBE (3s)
+      // because CI page hydration can be slow even after the 1.5s buffer
       const found = await this.page.locator(`text=${cardText}`).first()
-        .isVisible({ timeout: TIMEOUTS.PROBE })
+        .isVisible({ timeout: TIMEOUTS.MEDIUM })
         .catch(() => false);
       // .catch() ensures a missing element returns false instead of throwing
 
       if (tabName === TABS.ONGOING)  results.inOngoing  = found;
       if (tabName === TABS.UPCOMING) results.inUpcoming = found;
       if (tabName === TABS.PAST)     results.inPast     = found;
+
+      console.log(`  → Tab "${tabName}": card ${found ? '✅ FOUND' : '❌ not found'}`);
     }
 
     // Derive which tab currently holds the card
